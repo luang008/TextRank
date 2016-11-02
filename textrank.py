@@ -156,7 +156,11 @@ def writeFiles(summary, keyphrases, fileName):
 
     print "-"
 
-
+def loadModel(vec_file_path):
+    "load embeddings into a numpy matrix"
+    DELIMITER = ' '
+    model = numpy.loadtxt(vec_file_path)
+    return model
 #retrieve each of the articles
 articles = os.listdir("articles")
 for article in articles:
