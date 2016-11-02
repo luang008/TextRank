@@ -12,6 +12,7 @@ import itertools
 from operator import itemgetter
 import networkx as nx
 import os
+from sklearn.metrics.pairwise import cosine_similarity
 
 #apply syntactic filters based on POS tags
 def filter_for_tags(tagged, tags=['NN', 'JJ', 'NNP']):
@@ -156,11 +157,36 @@ def writeFiles(summary, keyphrases, fileName):
 
     print "-"
 
+def rankSentence(graph):
+    calculated_page_rank = nx.pagerank(graph, weight='weight')
+
+    #most important sentences in ascending order of importance
+    sentences = sorted(calculated_page_rank, key=calculated_page_rank.get, reverse=True)
+
+    return sentences    
+
+def buildVecGraph(model):
+    "build graph using embeddings"
+    nodes = [i for i in range(model.shape[0])]
+    gr = nx.Graph() #initialize an undirected graph
+    gr.add_nodes_from(nodes)
+    nodePairs = list(itertools.combinations(nodes, 2))
+
+    distance_matrix = cosine_similarity(model,model)
+    #add edges to the graph (weighted by Levenshtein distance)
+    for pair in nodePairs:
+        first_string = pair[0]
+        second_string = pair[1]
+        cosine_distance = distance_matrix[first_string,second_string]
+        gr.add_edge(first_string, second_string, weight=cosine_distance)
+    return gr
+
 def loadModel(vec_file_path):
     "load embeddings into a numpy matrix"
     DELIMITER = ' '
     model = numpy.loadtxt(vec_file_path)
     return model
+
 #retrieve each of the articles
 articles = os.listdir("articles")
 for article in articles:
